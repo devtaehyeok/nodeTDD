@@ -1,3 +1,4 @@
+const { query } = require('express');
 const express = require('express');
 const app = express();
 const port = 3000;
@@ -12,7 +13,13 @@ var users = [
 app.use(morgam('dev'));
 
 app.get('/users', (req, res) => {
-  res.json(users);
+  // 쿼리는 사실 문자열임
+  req.query.limit = req.query.limit || 10;
+  const limit = parseInt(req.query.limit, 10);
+  if (Number.isNaN(limit)) {
+    return res.status(400).end();
+  }
+  res.json(users.slice(0, limit));
 });
 
 app.listen(port, () => {
