@@ -16,3 +16,7 @@ describe('util.js모듈은', () => {
 
 // node_modules/.bin/mocha util.spec.js
 // 노드 assert말고 should 라이브러리를 쓰자.
+// 슈퍼테스트는 통합 테스트
+// api의 기능 테스트
+// 함수의 기능 테스트
+// api의 기능 테스트
