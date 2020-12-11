@@ -1,10 +1,8 @@
-/* 슈퍼 테스트는 익스프레스 통합 테스트용 라이브러리다
-• 내부적으로 익스프레스 서버를 구동시켜 실제 요청을 보낸
-뒤 결과를 검증한다 */
+// 테스트 코드/* 슈퍼 테스트는 익스프레스 통합 테스트용 라이브러리다
 
 const request = require('supertest');
 const should = require('should');
-const { app } = require('./index');
+const { app } = require('../../');
 
 // done 비동기 표시
 // 사용자 목록 조회 테스트
