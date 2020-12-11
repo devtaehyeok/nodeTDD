@@ -1,9 +1,4 @@
-// api 로직
-var users = [
-  { id: 1, name: 'alice' },
-  { id: 2, name: 'daniel' },
-  { id: 3, name: 'morgan' },
-];
+const models = require('../../models');
 
 const index = (req, res) => {
   // 쿼리는 사실 문자열임
@@ -12,7 +7,9 @@ const index = (req, res) => {
   if (Number.isNaN(limit)) {
     return res.status(400).end();
   }
-  return res.json(users.slice(0, limit)).end();
+  models.User.findAll({ limit: limit }).then((users) => {
+    return res.json(users);
+  });
 };
 
 const show = (req, res) => {
@@ -21,11 +18,16 @@ const show = (req, res) => {
   if (Number.isNaN(id)) {
     return res.status(400).end();
   }
-  const user = users.filter((user) => user.id === id)[0];
-  if (!user) {
-    return res.status(404).end();
-  }
-  return res.json(user).end();
+  models.User.findOne({
+    where: {
+      id,
+    },
+  }).then((user) => {
+    if (!user) {
+      return res.status(404).end();
+    }
+    return res.json(user).end();
+  });
 };
 
 const destroy = (req, res) => {
@@ -34,24 +36,27 @@ const destroy = (req, res) => {
   if (Number.isNaN(id)) {
     return res.status(400).end();
   }
-  const removedUsers = users.filter((user) => user.id !== id);
-  if (users.length === removedUsers.length) {
-    return res.status(404).end();
-  }
-  users = removedUsers;
-  return res.status(204).end();
+  models.User.destroy({
+    where: { id },
+  }).then(() => {
+    return res.status(204).end();
+  });
 };
 
 const create = (req, res) => {
   const name = req.body.name;
   if (!name) return res.status(400).end();
 
-  if (isConflict(users, name)) return res.status(409).end();
-
-  const id = Date.now();
-  const user = { id, name };
-  users.push(user);
-  return res.status(201).json(user);
+  models.User.create({ name })
+    .then((user) => {
+      res.status(201).json(user);
+    })
+    .catch((err) => {
+      if (err.name === 'SequelizeUniqueConstraintError') {
+        return res.status(409).end();
+      }
+      res.status(500).end();
+    });
 };
 
 const update = (req, res) => {
@@ -61,14 +66,24 @@ const update = (req, res) => {
   const name = req.body.name;
   if (!name) return res.status(400).end();
 
-  if (isConflict(users, name)) return res.status(409).end();
+  // if (isConflict) return res.status(409).end();
 
-  const user = users.filter((user) => user.id === id)[0];
-  if (!user) return res.status(404).end();
+  models.User.findOne({ where: { id } }).then((user) => {
+    if (!user) return res.status(404).end();
 
-  user.name = name;
-
-  return res.json(user).end();
+    user.name = name;
+    user
+      .save()
+      .then((_) => {
+        res.json(user);
+      })
+      .catch((err) => {
+        if (err.name === 'SequelizeUniqueConstraintError') {
+          return res.status(409).end();
+        }
+        res.status(500).end();
+      });
+  });
 };
 
 module.exports = {
@@ -77,8 +92,4 @@ module.exports = {
   destroy,
   create,
   update,
-};
-
-const isConflict = (users, name) => {
-  return Boolean(users.filter((user) => user.name === name).length);
 };

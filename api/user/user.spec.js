@@ -3,11 +3,16 @@
 const request = require('supertest');
 const should = require('should');
 const { app } = require('../../');
-
+const models = require('../../models');
 // done 비동기 표시
 // 사용자 목록 조회 테스트
 describe('GET /users는', () => {
   describe('성공시', () => {
+    const users = [{ name: 'alice' }, { name: 'bek' }, { name: 'chris' }];
+    before((done) => {
+      models.sequelize.sync({ force: true }).then(() => done());
+    });
+    before(() => models.User.bulkCreate(users));
     it('유저 객체를 담은 배열로 응답한다 ', (done) => {
       request(app)
         .get('/users')
@@ -40,6 +45,10 @@ describe('GET /users는', () => {
 
 // 사용자 아이디로 조회 테스트
 describe('GET /users/:id는', () => {
+  const users = [{ name: 'alice' }, { name: 'bek' }, { name: 'chris' }];
+  before(() => models.sequelize.sync({ force: true }));
+  before(() => models.User.bulkCreate(users));
+
   describe('성공시', () => {
     it('id가 1인 유저 객체를 반환한다', (done) => {
       request(app)
@@ -60,26 +69,14 @@ describe('GET /users/:id는', () => {
   });
 });
 
-// 사용자 아이디로 삭제 테스트
-describe('DELETE /users/:id는', () => {
-  describe('성공시', () => {
-    it('204를 응답한다', (done) => {
-      request(app).delete('/users/1').expect(204).end(done);
-    });
-  });
-  describe('실패시', () => {
-    it('id가 숫자가 아닐경우 400으로 응답한다', (done) => {
-      request(app).get('/users/one').expect(400).end(done);
-    });
-    it('id가 없을 시 404를 응답한다', (done) => {
-      request(app).delete('/users/999').expect(404).end(done);
-    });
-  });
-});
-
+// create
 describe('POST /users', () => {
+  const users = [{ name: 'alice' }, { name: 'bek' }, { name: 'chris' }];
+  before(() => models.sequelize.sync({ force: true }));
+  before(() => models.User.bulkCreate(users));
+
   describe('성공시', () => {
-    let name = 'thlim',
+    let name = 'daniel',
       body;
     before((done) => {
       request(app)
@@ -112,36 +109,51 @@ describe('POST /users', () => {
   });
 });
 
-// 사용자 아이디로 삭제 테스트
-describe('PUT /users/:id', () => {
-  describe('성공시', () => {
-    it('변경된 name을 응답한다', (done) => {
+// 사용자 아이디로 변경 테스트
+describe.only('PUT /users/:id', ()=>{
+  const users = [{name: 'alice'}, {name: 'bek'}, {name: 'dragon'}];
+  before(()=>models.sequelize.sync({force: true}));
+  before(()=> models.User.bulkCreate(users));
+  
+  describe('성공시', ()=> {
+    it('변경된 name을 응답한다', (done)=> {
       const name = 'thth';
       request(app)
-        .put('/users/3')
-        .send({ name })
-        .end((err, res) => {
-          res.body.should.have.property('name', name);
-          done();
-        });
-    });
+          .put('/users/3')
+          .send({name})
+          .end((err, res) =>{
+            res.body.should.have.property('name', name);
+            done();
+          });
+    })
   });
-  describe('실패시', () => {
-    it('정수가 아닌 id일 경우 400을 응답한다', (done) => {
-      request(app).put('/users/one').expect(400).end(done);
-    });
-    it('name이 없을 경우 400을 응답한다', (done) => {
-      request(app).put('/users/1').send({}).expect(400).end(done);
-    });
-    it('없는 유저일 경우 404을 응답한다', (done) => {
+  describe('실패시', ()=>{
+    it('정수가 아닌 id일 경우 400을 응답한다', done=>{
       request(app)
-        .put('/users/999')
-        .send({ name: 'nonono' })
-        .expect(404)
-        .end(done);
+          .put('/users/one')
+          .expect(400)
+          .end(done);
     });
-    it('이름이 중복일 경우 409을 응답한다', (done) => {
-      request(app).put('/users/3').send({ name:'thth' }).expect(409).end(done);
+    it('name이 없을 경우 400을 응답한다', done=>{
+      request(app)
+          .put('/users/1')
+          .send({})
+          .expect(400)
+          .end(done);
     });
-  });
-});
+    it('없는 유저일 경우 404을 응답한다', done=>{
+      request(app)
+          .put('/users/999')
+          .send({name: 'foo'})
+          .expect(404)
+          .end(done);
+    });
+    it('이름이 중복일 경우 409을 응답한다', done=>{
+      request(app)
+          .put('/users/3')
+          .send({name: 'alice'})
+          .expect(409)
+          .end(done);
+    })
+  })
+})

@@ -2,10 +2,14 @@ const Sequelize = require('sequelize');
 const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: '.db/sqlite',
+  logging: false, // 쿼리를 안보여줌
 });
 
 // id는 자동으로 만들어줌
-const User = sequelize.define('User', { name: Sequelize.DataTypes.STRING });
+const User = sequelize.define('User', {
+  // unique == true
+  name: { type: Sequelize.DataTypes.STRING, unique: true },
+});
 
 module.exports = { Sequelize, sequelize, User };
 
