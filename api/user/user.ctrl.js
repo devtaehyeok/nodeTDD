@@ -46,8 +46,7 @@ const create = (req, res) => {
   const name = req.body.name;
   if (!name) return res.status(400).end();
 
-  const isConflict = users.filter((user) => user.name === name).length;
-  if (isConflict) return res.status(409).end();
+  if (isConflict(users, name)) return res.status(409).end();
 
   const id = Date.now();
   const user = { id, name };
@@ -62,15 +61,14 @@ const update = (req, res) => {
   const name = req.body.name;
   if (!name) return res.status(400).end();
 
-  const isConflict = users.filter((user) => user.name === name).length;
-  if (isConflict) return res.status(409).end();
+  if (isConflict(users, name)) return res.status(409).end();
 
   const user = users.filter((user) => user.id === id)[0];
   if (!user) return res.status(404).end();
 
   user.name = name;
 
-  res.json(user);
+  return res.json(user).end();
 };
 
 module.exports = {
@@ -79,4 +77,8 @@ module.exports = {
   destroy,
   create,
   update,
+};
+
+const isConflict = (users, name) => {
+  return Boolean(users.filter((user) => user.name === name).length);
 };
